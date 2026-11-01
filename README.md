@@ -23,14 +23,32 @@ Otwórz http://127.0.0.1:5000. Konto administratora utworzy się automatycznie p
 
 Zmień to hasło po pierwszym zalogowaniu w zakładce **Profil**. Administrator dodaje konta w swoim panelu i przekazuje użytkownikom ich loginy oraz hasła.
 
+## Wdrożenie na Renderze
+
+1. Umieść folder `quizlab_app` w repozytorium GitHub i wypchnij zmiany.
+2. W Render wybierz **New → Web Service** i połącz repozytorium.
+3. Ustaw **Root Directory** na `outputs/quizlab_app` (jeśli ten folder znajduje się w repozytorium).
+4. Wpisz **Build Command**: `pip install -r requirements.txt`.
+5. Wpisz **Start Command**: `gunicorn app:app`.
+6. W **Environment Variables** dodaj `QUIZLAB_SECRET_KEY` z długą losową wartością i `OPENAI_API_KEY` ze swoim kluczem API. Możesz też ustawić `OPENAI_MODEL`.
+7. Ustaw health check path na `/health`, wybierz plan i kliknij **Create Web Service**.
+
+Renderowy system plików jest tymczasowy. W tej wersji konta i quizy są w SQLite, więc przed używaniem przez innych dodaj do usługi płatny **Persistent Disk** z mount path `/var/data` i ustaw zmienną `QUIZLAB_DB=/var/data/quizlab.sqlite3`. Bez trwałego dysku baza może zniknąć przy restarcie lub wdrożeniu. Pamiętaj, by zmienić początkowe hasło `admin` / `1234` po pierwszym logowaniu.
+
+## Aktualizacja istniejącego repozytorium GitHub
+
+Skopiuj do katalogu głównego repozytorium `app.py`, `requirements.txt` oraz `README.md`, a folder `templates` zastąp folderem z tej wersji. Zatwierdź zmiany w GitHubie; Render rozpocznie automatyczne wdrożenie. Zachowaj ustawione w Renderze sekrety `QUIZLAB_SECRET_KEY` i `OPENAI_API_KEY`.
+
 ## Funkcje
 
-- Administrator dodaje użytkowników (login, imię, nazwisko i hasło), zmienia ich hasła, zawiesza, wznawia i usuwa konta.
+- Administrator dodaje użytkowników i administratorów (login, imię, nazwisko i hasło), zmienia hasła, zawiesza, wznawia i usuwa konta. Ostatniego aktywnego administratora nie da się usunąć ani zawiesić.
 - Administrator i użytkownicy mogą zmienić hasło oraz motyw: zielony, niebieski, czerwony lub pomarańczowy.
-- Użytkownicy tworzą quizy z wklejonego tekstu lub przesłanych plików, rozwiązują je online i pobierają quiz z kluczem odpowiedzi.
+- Użytkownicy tworzą testy z tekstu, zdjęć, skanów PDF i tekstowych PDF-ów; mogą wybrać od 1 do 50 pytań i typy ABCD, prawda/fałsz, otwarte oraz dopasowywanie.
+- Zdjęcia i skany są analizowane przez AI. Przy zaznaczonej opcji ilustracji model może wygenerować maksymalnie trzy obrazy na test; generowanie grafik może zwiększyć koszt API.
+- Przycisk „Wyjaśnij materiał” prosi AI o objaśnienie tekstu lub przesłanych obrazów. „Zapisz jako PDF” otwiera systemowe okno drukowania — wybierz w nim „Zapisz jako PDF”; dokument zawiera test i klucz.
 - Konta i quizy są zapisywane w lokalnej bazie SQLite (`quizlab.sqlite3`).
 - Generowanie pytań wymaga klucza API dostawcy AI ustawionego w `OPENAI_API_KEY`; model można wskazać przez `OPENAI_MODEL` (domyślnie `gpt-4.1-mini`). Klucz API pozostaje po stronie backendu.
-- PDF-y tekstowe są odczytywane przez `pypdf`. Zdjęcia wymagają pakietów Pillow i pytesseract oraz systemowego Tesseract OCR z językiem polskim.
+- Tekstowe PDF-y są odczytywane przez `pypdf`; skanowane PDF-y są renderowane przez `PyMuPDF` i analizowane przez model AI. Zdjęcia trafiają bezpośrednio do analizy obrazu AI, więc serwer nie potrzebuje instalacji Tesseract OCR.
 - Obsługiwane formaty: PDF, JPG, PNG, WEBP i TXT. Limit aplikacji to 20 MB na żądanie.
 
 ## Dane i wdrożenie
