@@ -29,7 +29,7 @@ Zmień to hasło po pierwszym zalogowaniu w zakładce **Profil**. Administrator 
 2. W Render wybierz **New → Web Service** i połącz repozytorium.
 3. Ustaw **Root Directory** na `outputs/quizlab_app` (jeśli ten folder znajduje się w repozytorium).
 4. Wpisz **Build Command**: `pip install -r requirements.txt`.
-5. Wpisz **Start Command**: `gunicorn app:app`.
+5. Wpisz **Start Command**: `gunicorn --timeout 180 app:app`.
 6. W **Environment Variables** dodaj `QUIZLAB_SECRET_KEY` z długą losową wartością i `OPENAI_API_KEY` ze swoim kluczem API. Możesz też ustawić `OPENAI_MODEL`.
 7. Ustaw health check path na `/health`, wybierz plan i kliknij **Create Web Service**.
 
