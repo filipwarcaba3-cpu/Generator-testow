@@ -326,7 +326,18 @@ def generate_quiz(text, image_inputs, count, difficulty, subject, question_types
         raise
     except Exception as exc:
         app.logger.exception("Quiz generation failed")
-        raise ValueError("Nie udało się wygenerować quizu. Sprawdź klucz API i spróbuj ponownie.") from exc
+        detail = re.sub(r"sk-[A-Za-z0-9_-]{8,}|Bearer\s+\S+", "[ukryto sekret]", str(exc))
+        detail = " ".join(detail.split())[:360]
+        error_name = type(exc).__name__
+        if error_name == "AuthenticationError":
+            message = "OpenAI odrzuciło OPENAI_API_KEY. W Renderze wklej nowy, aktywny klucz API."
+        elif error_name == "RateLimitError":
+            message = "OpenAI zgłosiło limit lub brak środków na koncie API. Szczegóły: " + detail
+        elif error_name in {"PermissionDeniedError", "NotFoundError"}:
+            message = "Konto API nie ma dostępu do wskazanego modelu albo model nie istnieje. Szczegóły: " + detail
+        else:
+            message = "Błąd OpenAI (" + error_name + "): " + (detail or "sprawdź logi Rendera")
+        raise ValueError(message) from exc
 
 
 @app.post("/api/quiz")
